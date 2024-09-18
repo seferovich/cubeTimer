@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from 'react'
 
-const Stopwatch = () => {
+const Stopwatch = ({getNewScramble}) => {
   const [time, setTime] = useState(0)
+  const [showDots, setShowDots] = useState(false)
   const intervalRef = useRef(null)
   const isRunningRef = useRef(false)
 
@@ -29,15 +30,19 @@ const Stopwatch = () => {
       intervalRef.current = setInterval(() => {
         setTime(Date.now() - startTime)
       }, 10) 
+
       isRunningRef.current = true
     }
 
   }
 
   const stopStopwatch = () => {
+
     if (isRunningRef.current) {
+        
       clearInterval(intervalRef.current)
       isRunningRef.current = false
+
 
     }
   }
@@ -49,28 +54,53 @@ const Stopwatch = () => {
   }
 
   useEffect(() => {
-    document.addEventListener('keydown', detect, true)
+    document.addEventListener('keydown', handleKeyDown, true)
+    document.addEventListener('keyup', handleKeyUp, true)
+  
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown, true)
+      document.removeEventListener('keyup', handleKeyUp, true)
+    }
   }, [])
   
-  const detect = (e) => {
-    if(e.key === " "){
-        if(!isRunningRef.current){
-            startStopwatch()
-            console.log(isRunningRef.current)
-            
-        }else{
-            stopStopwatch()
-            console.log(isRunningRef.current)
-        }
-        console.log(isRunningRef.current)
+  let timeoutId
+  let isPressedLongEnough = false
+  
+  const handleKeyDown = (e) => {
+    setShowDots(true)
+    if (e.key === " " && !isRunningRef.current && !timeoutId ) {
+      timeoutId = setTimeout(() => {
+        setShowDots(false)
+        isPressedLongEnough = true
         
-      
+      }, 500)
+    }else{
+        setShowDots(false)
+        stopStopwatch()
+    } 
+  }
+  
+  const handleKeyUp = (e) => {
+    setShowDots(false)
+    if (e.key === " ") {
+      clearTimeout(timeoutId)
+      timeoutId = null
+      if (isPressedLongEnough && !isRunningRef.current) {
+        setShowDots(false)
+        resetStopwatch()
+        startStopwatch()
+        getNewScramble()
+      }
+
+      isPressedLongEnough = false
     }
   }
+  
 
   return (
-    <div>
+    <div className='flex flex-col items-center justify-center'>
       <div className='font-mono text-5xl font-medium text-center mt-52'>{formatTime(time)}</div>
+      {showDots ? <h1 className='font-mono text-6xl font-medium text-center '>...</h1> : ""}
       <div>
 
       </div>
